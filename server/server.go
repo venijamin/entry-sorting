@@ -40,8 +40,6 @@ func (h *FileUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		return
 	}
-
-	// TODO: results page
 }
 
 func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +86,7 @@ func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func sortFile(filepath string) {
-
+	start := time.Now()
 	println("Sorting Lines...")
 	file, err := os.Open(filepath)
 	if err != nil {
@@ -107,6 +105,8 @@ func sortFile(filepath string) {
 	writer.WriteAll(records)
 
 	println("Sorting Done.")
+	fmt.Printf("Sorting time: %s", time.Since(start))
+
 }
 
 type CSV [][]string
