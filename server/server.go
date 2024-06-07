@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 )
 
@@ -62,7 +63,7 @@ func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
 
 	// Create a temporary file within our temp-images directory that follows
 	// a particular naming pattern
-	tempFile, err := ioutil.TempFile("./", "*.csv")
+	tempFile, err := os.CreateTemp("./files", "*.csv")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -70,12 +71,15 @@ func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
 
 	// read all of the contents of our uploaded file into a
 	// byte array
-	fileBytes, err := ioutil.ReadAll(file)
+	fileBytes, err := io.ReadAll(file)
 	if err != nil {
 		fmt.Println(err)
 	}
 	// write this byte array to our temporary file
 	tempFile.Write(fileBytes)
 	// return that we have successfully uploaded our file!
-	fmt.Fprintf(w, "Successfully Uploaded File\n")
+	//fmt.Fprintf(w, "Successfully Uploaded File\n")
+	http.Redirect(w, r, "localhost:3333/", 301)
 }
+
+// TODO: sort files
