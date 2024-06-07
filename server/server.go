@@ -1,12 +1,16 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"regexp"
+	"sort"
+	"time"
 )
 
 func main() {
@@ -79,7 +83,49 @@ func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
 	tempFile.Write(fileBytes)
 	// return that we have successfully uploaded our file!
 	//fmt.Fprintf(w, "Successfully Uploaded File\n")
+	sortFile(tempFile.Name())
 	http.Redirect(w, r, "localhost:3333/", 301)
 }
 
-// TODO: sort files
+func sortFile(filepath string) {
+
+	println("Sorting Lines...")
+	file, err := os.Open(filepath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+
+	sort.Sort(CSV(records))
+
+	sortedFileName := "./files/sorted-" + path.Base(filepath)
+	sortedFile, err := os.OpenFile(sortedFileName, os.O_CREATE|os.O_WRONLY, 0644)
+	writer := csv.NewWriter(sortedFile)
+	writer.WriteAll(records)
+
+	println("Sorting Done.")
+}
+
+type CSV [][]string
+
+// Determine if one CSV line at index i comes before the line at index j.
+func (data CSV) Less(i, j int) bool {
+	dateColumnIndex := 0
+	date1 := data[i][dateColumnIndex]
+	date2 := data[j][dateColumnIndex]
+	timeT1, _ := time.Parse("2006-01-02 15:04:05", date1)
+	timeT2, _ := time.Parse("2006-01-02 15:04:05", date2)
+
+	return timeT1.Before(timeT2)
+}
+
+// Other functions required for sort.Sort.
+func (data CSV) Len() int {
+	return len(data)
+}
+func (data CSV) Swap(i, j int) {
+	data[i], data[j] = data[j], data[i]
+}
