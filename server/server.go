@@ -5,21 +5,41 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 )
 
 func main() {
 	fs := http.FileServer(http.Dir("./server/sites"))
-	http.Handle("/", fs)
-	http.HandleFunc("/upload", uploadFile)
+
+	mux := http.NewServeMux()
+	mux.Handle("/", fs)
+	mux.Handle("/upload", &FileUploadHandler{})
 
 	log.Print("Listening on :3333...")
-	err := http.ListenAndServe(":3333", nil)
+	err := http.ListenAndServe(":3333", mux)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func uploadFile(w http.ResponseWriter, r *http.Request) {
+type FileUploadHandler struct{}
+
+var (
+	FileUpload = regexp.MustCompile(`^/upload/*$`)
+)
+
+func (h *FileUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch {
+	case r.Method == http.MethodPost && FileUpload.MatchString(r.URL.Path):
+		h.FileUpload(w, r)
+	default:
+		return
+	}
+
+	// TODO: results page
+}
+
+func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("File Upload Endpoint Hit")
 
 	// Parse our multipart form, 10 << 20 specifies a maximum
@@ -32,6 +52,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("Error Retrieving the File")
 		fmt.Println(err)
+		fmt.Fprintf(w, "Failed to Upload File\n")
 		return
 	}
 	defer file.Close()
