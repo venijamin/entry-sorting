@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	file, err := os.OpenFile("data.csv", os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile("data-500000.csv", os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}

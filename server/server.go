@@ -10,6 +10,7 @@ import (
 	"path"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -49,7 +50,7 @@ func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
 	// upload of 10 MB files.
 	r.ParseMultipartForm(10 << 20)
 	// FormFile returns the first file for the given key `myFile`
-	// it also returns the FileHeader so we can get the Filename,
+	// it also returns the FileHeader, so we can get the Filename,
 	// the Header and the size of the file
 	file, handler, err := r.FormFile("file")
 	if err != nil {
@@ -71,7 +72,7 @@ func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tempFile.Close()
 
-	// read all of the contents of our uploaded file into a
+	// read all the contents of our uploaded file into a
 	// byte array
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
@@ -80,7 +81,7 @@ func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
 	// write this byte array to our temporary file
 	tempFile.Write(fileBytes)
 	// return that we have successfully uploaded our file!
-	//fmt.Fprintf(w, "Successfully Uploaded File\n")
+
 	sortFile(tempFile.Name())
 	http.Redirect(w, r, "localhost:3333/", 301)
 }
@@ -99,7 +100,8 @@ func sortFile(filepath string) {
 
 	sort.Sort(CSV(records))
 
-	sortedFileName := "./files/sorted-" + path.Base(filepath)
+	filename := strings.TrimSuffix(path.Base(filepath), path.Ext(filepath))
+	sortedFileName := "./files/" + filename + "-sorted.csv"
 	sortedFile, err := os.OpenFile(sortedFileName, os.O_CREATE|os.O_WRONLY, 0644)
 	writer := csv.NewWriter(sortedFile)
 	writer.WriteAll(records)
