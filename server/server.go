@@ -10,6 +10,7 @@ import (
 	"path"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -52,7 +53,7 @@ func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
 	// FormFile returns the first file for the given key `myFile`
 	// it also returns the FileHeader, so we can get the Filename,
 	// the Header and the size of the file
-	file, handler, err := r.FormFile("file")
+	file, _, err := r.FormFile("file")
 	if err != nil {
 		fmt.Println("Error Retrieving the File")
 		fmt.Println(err)
@@ -60,10 +61,6 @@ func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
-	fmt.Printf("File Size: %+v\n", handler.Size)
-	fmt.Printf("MIME Header: %+v\n", handler.Header)
-
 	// Create a temporary file within our temp-images directory that follows
 	// a particular naming pattern
 	tempFile, err := os.CreateTemp("./files", "*.csv")
@@ -82,13 +79,15 @@ func (h *FileUploadHandler) FileUpload(w http.ResponseWriter, r *http.Request) {
 	tempFile.Write(fileBytes)
 	// return that we have successfully uploaded our file!
 
-	sortFile(tempFile.Name())
+	fileName := sortFile(tempFile.Name())
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(fileName))
+	w.Header().Set("Content-Type", "application/octet-stream")
+	http.ServeFile(w, r, fileName)
 	http.Redirect(w, r, "localhost:3333/", 301)
 }
 
-func sortFile(filepath string) {
+func sortFile(filepath string) string {
 	start := time.Now()
-	println("Sorting Lines...")
 	file, err := os.Open(filepath)
 	if err != nil {
 		log.Fatal(err)
@@ -106,8 +105,8 @@ func sortFile(filepath string) {
 	writer := csv.NewWriter(sortedFile)
 	writer.WriteAll(records)
 
-	println("Sorting Done.")
-	fmt.Printf("Sorting time: %s", time.Since(start))
+	fmt.Printf("Sorting time: %s\n", time.Since(start))
+	return sortedFileName
 
 }
 
