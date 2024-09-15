@@ -16,7 +16,8 @@ import (
 )
 
 func main() {
-	fs := http.FileServer(http.Dir("./server/sites"))
+	os.MkdirAll("./files", 0755) // 0755 is the permission mode
+	fs := http.FileServer(http.Dir("./sites"))
 
 	mux := http.NewServeMux()
 	mux.Handle("/", fs)
